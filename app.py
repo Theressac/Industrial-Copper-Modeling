@@ -1,309 +1,210 @@
-from datetime import date
-import numpy as np
-import pickle
+# import library in the application...
 import streamlit as st
-
-
-# Streamlit page custom design
-
-def streamlit_config():
-
-    # page configuration
-    st.set_page_config(page_title='Industrial Copper Modeling')
-
-    # page header transparent color
-    page_background_color = """
-    <style>
-
-    [data-testid="stHeader"] 
-    {
-    background: rgba(0,0,0,0);
-    }
-
-    </style>
-    """
-    st.markdown(page_background_color, unsafe_allow_html=True)
-
-    # title and position
-    st.markdown(f'<h1 style="text-align: center;">Industrial Copper Modeling</h1>',
-                unsafe_allow_html=True)
-
-
-
-# custom style for submit button - color and width
-
-def style_submit_button():
-
-    st.markdown("""
-                    <style>
-                    div.stButton > button:first-child {
-                                                        background-color: #367F89;
-                                                        color: white;
-                                                        width: 70%}
-                    </style>
-                """, unsafe_allow_html=True)
-
-
-
-# custom style for prediction result text - color and position
-
-def style_prediction():
-
-    st.markdown(
-            """
-            <style>
-            .center-text {
-                text-align: center;
-                color: #20CA0C
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-
-# user input options
-
-class options:
-
-    country_values = [25.0, 26.0, 27.0, 28.0, 30.0, 32.0, 38.0, 39.0, 40.0, 77.0, 
-                    78.0, 79.0, 80.0, 84.0, 89.0, 107.0, 113.0]
-
-    status_values = ['Won', 'Lost', 'Draft', 'To be approved', 'Not lost for AM',
-                    'Wonderful', 'Revised', 'Offered', 'Offerable']
-    status_dict = {'Lost':0, 'Won':1, 'Draft':2, 'To be approved':3, 'Not lost for AM':4,
-                'Wonderful':5, 'Revised':6, 'Offered':7, 'Offerable':8}
-
-    item_type_values = ['W', 'WI', 'S', 'PL', 'IPL', 'SLAWR', 'Others']
-    item_type_dict = {'W':5.0, 'WI':6.0, 'S':3.0, 'Others':1.0, 'PL':2.0, 'IPL':0.0, 'SLAWR':4.0}
-
-    application_values = [2.0, 3.0, 4.0, 5.0, 10.0, 15.0, 19.0, 20.0, 22.0, 25.0, 26.0, 
-                        27.0, 28.0, 29.0, 38.0, 39.0, 40.0, 41.0, 42.0, 56.0, 58.0, 
-                        59.0, 65.0, 66.0, 67.0, 68.0, 69.0, 70.0, 79.0, 99.0]
-
-    product_ref_values = [611728, 611733, 611993, 628112, 628117, 628377, 640400, 
-                        640405, 640665, 164141591, 164336407, 164337175, 929423819, 
-                        1282007633, 1332077137, 1665572032, 1665572374, 1665584320, 
-                        1665584642, 1665584662, 1668701376, 1668701698, 1668701718, 
-                        1668701725, 1670798778, 1671863738, 1671876026, 1690738206, 
-                        1690738219, 1693867550, 1693867563, 1721130331, 1722207579]
-
-
-
-# Get input data from users both regression and classification methods
-
-class prediction:
-
-    def regression():
-
-        # get input from users
-        with st.form('Regression'):
-
-            col1,col2,col3 = st.columns([0.5,0.1,0.5])
-
-            with col1:
-
-                item_date = st.date_input(label='Item Date', min_value=date(2020,7,1), 
-                                        max_value=date(2021,5,31), value=date(2020,7,1))
-                
-                quantity_log = st.text_input(label='Quantity Tons (Min: 0.00001 & Max: 1000000000)')
-
-                country = st.selectbox(label='Country', options=options.country_values)
-
-                item_type = st.selectbox(label='Item Type', options=options.item_type_values)
-
-                thickness_log = st.number_input(label='Thickness', min_value=0.1, max_value=2500000.0, value=1.0)
-
-                product_ref = st.selectbox(label='Product Ref', options=options.product_ref_values)
-
-            
-            with col3:
-
-                delivery_date = st.date_input(label='Delivery Date', min_value=date(2020,8,1), 
-                                            max_value=date(2022,2,28), value=date(2020,8,1))
-                
-                customer = st.text_input(label='Customer ID (Min: 12458000 & Max: 2147484000)')
-
-                status = st.selectbox(label='Status', options=options.status_values)
-
-                application = st.selectbox(label='Application', options=options.application_values)
-
-                width = st.number_input(label='Width', min_value=1.0, max_value=2990000.0, value=1.0)
-
-                st.write('')
-                st.write('')
-                button = st.form_submit_button(label='SUBMIT')
-                style_submit_button()
-
-
-        # give information to users
-        col1,col2 = st.columns([0.65,0.35])
-        with col2:
-            st.caption(body='*Min and Max values are reference only')
-
-
-        # user entered the all input values and click the button
-        if button:
-            
-            # load the regression pickle model
-            with open(r'models\regression_model.pkl', 'rb') as f:
-                model = pickle.load(f)
-            
-            # make array for all user input values in required order for model prediction
-            user_data = np.array([[customer, 
-                                country, 
-                                options.status_dict[status], 
-                                options.item_type_dict[item_type], 
-                                application, 
-                                width, 
-                                product_ref, 
-                                np.log(float(quantity_log)), 
-                                np.log(float(thickness_log)),
-                                item_date.day, item_date.month, item_date.year,
-                                delivery_date.day, delivery_date.month, delivery_date.year]])
-            
-            # model predict the selling price based on user input
-            y_pred = model.predict(user_data)
-
-            # inverse transformation for log transformation data
-            selling_price = np.exp(y_pred[0])
-
-            # round the value with 2 decimal point (Eg: 1.35678 to 1.36)
-            selling_price = round(selling_price, 2)
-
-            return selling_price
-
-
-    def classification():
-
-        # get input from users
-        with st.form('Classification'):
-
-            col1,col2,col3 = st.columns([0.5,0.1,0.5])
-
-            with col1:
-
-                item_date = st.date_input(label='Item Date', min_value=date(2020,7,1), 
-                                        max_value=date(2021,5,31), value=date(2020,7,1))
-                
-                quantity_log = st.text_input(label='Quantity Tons (Min: 0.00001 & Max: 1000000000)')
-
-                country = st.selectbox(label='Country', options=options.country_values)
-
-                item_type = st.selectbox(label='Item Type', options=options.item_type_values)
-
-                thickness_log = st.number_input(label='Thickness', min_value=0.1, max_value=2500000.0, value=1.0)
-
-                product_ref = st.selectbox(label='Product Ref', options=options.product_ref_values)
-
-
-            with col3:
-
-                delivery_date = st.date_input(label='Delivery Date', min_value=date(2020,8,1), 
-                                            max_value=date(2022,2,28), value=date(2020,8,1))
-                
-                customer = st.text_input(label='Customer ID (Min: 12458000 & Max: 2147484000)')
-
-                selling_price_log = st.text_input(label='Selling Price (Min: 0.1 & Max: 100001000)')
-
-                application = st.selectbox(label='Application', options=options.application_values)
-
-                width = st.number_input(label='Width', min_value=1.0, max_value=2990000.0, value=1.0)
-
-                st.write('')
-                st.write('')
-                button = st.form_submit_button(label='SUBMIT')
-                style_submit_button()
+from streamlit_option_menu import option_menu
+import datetime
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+import pickle
+
+#Initial parameter settings for streamlit
+st.set_page_config(page_title="Industrial Copper Modeling", page_icon="",layout="wide", initial_sidebar_state="expanded")
+st.title(":blue[Industrial Copper Modeling]")
+
+with st.sidebar:
+    selected = option_menu(
+        menu_title="Menu",  
+        options=["PRICE PREDICTION","---", "STATUS", "---"],  
+        default_index=0,  
+        styles={"nav-link": {"--hover-color": "brown"}},
+        orientation="vertical",
+)
+
+
+
+
+# Price prediction based on the provided fields values
+if selected=='PRICE PREDICTION':
+        item_list=['W', 'S', 'Others', 'PL', 'WI', 'IPL']
+        status_list=['Won', 'To be approved', 'Lost', 'Not lost for AM', 'Wonderful', 'Revised','Offered', 'Offerable']
+        country_list=['28', '32', '38', '78', '27', '30', '25', '77', '39', '40', '26', '84', '80', '79','113', '89']
+        application_list=[10, 41, 28, 59, 15, 4, 38, 56, 42, 26, 27, 19, 20, 66,
+                          29, 22, 40, 25, 67, 79, 3, 99, 2, 5,39, 69, 70, 65, 58, 68]
+
+        product_list=[1670798778, 1668701718, 628377, 640665, 611993, 1668701376,
+                      164141591, 1671863738, 1332077137,     640405, 1693867550, 1665572374,
+                      1282007633, 1668701698, 628117, 1690738206, 628112, 640400,
+                      1671876026, 164336407, 164337175, 1668701725, 1665572032, 611728,
+                      1721130331, 1693867563, 611733, 1690738219, 1722207579, 929423819,
+                      1665584320, 1665584662, 1665584642]
         
+
+        c1,c2,c3=st.columns([2,2,2])
+        with c1:
+            quantity=st.text_input('Enter Quantity  (Min:611728 & Max:1722207579) in tons')
+            thickness = st.text_input('Enter Thickness (Min:0.18 & Max:400)')
+            width = st.text_input('Enter Width  (Min:1, Max:2990)')
+
+
+        with c2:
+            country = st.selectbox('Country Code', country_list)
+            status = st.selectbox('Status', status_list)
+            item = st.selectbox('Item Type', item_list)
+
+        with c3:
+            application = st.selectbox('Application Type', application_list)
+            product = st.selectbox('Product Reference', product_list)
+            item_order_date = st.date_input("Order Date", datetime.date(2023, 1, 1))
+            item_delivery_date = st.date_input("Estimated Delivery Date", datetime.date(2023, 1, 1))
+        with c1:
+            for _ in range(3):
+                st.write(" ")
+            if st.button('PREDICT PRICE'):
+                data = []
+                with open('country.pkl', 'rb') as file:
+                    encode_country = pickle.load(file)
+                with open('status.pkl', 'rb') as file:
+                    encode_status = pickle.load(file)
+                with open('item type.pkl', 'rb') as file:
+                    encode_item = pickle.load(file)
+                with open('scaling.pkl', 'rb') as file:
+                    scaled_data = pickle.load(file)
+                with open('Extratreeregressor.pkl', 'rb') as file:
+                    trained_model = pickle.load(file)
+
+                transformed_country = encode_country.transform(country_list)
+                encoded_ct = None
+                for i, j in zip(country_list, transformed_country):
+                    if country == i:
+                        encoded_ct = j
+                        break
+                else:
+                    st.error("Country not found.")
+                    exit()
+
+                transformed_status = encode_status.transform(status_list)
+                encode_st = None
+                for i, j in zip(status_list, transformed_status):
+                    if status == i:
+                        encode_st = j
+                        break
+                else:
+                    st.error("Status not found.")
+                    exit()
+
+
+                transformed_item = encode_item.transform(item_list)
+                encode_it = None
+                for i, j in zip(item_list, transformed_item):
+                    if item == i:
+                        encode_it = j
+                        break
+                else:
+                    st.error("Item type not found.")
+                    exit()
+
+
+
+                order = datetime.datetime.strptime(str(item_order_date), "%Y-%m-%d")
+                delivery = datetime.datetime.strptime(str(item_delivery_date), "%Y-%m-%d")
+                day = delivery - order
+
+
+                data.append(quantity)
+                data.append(thickness)
+                data.append(width)
+                data.append(encoded_ct)
+                data.append(encode_st)
+                data.append(encode_it)
+                data.append(application)
+                data.append(product)
+                data.append(day.days)
+
+                x = np.array(data).reshape(1, -1)
+                pred_model= scaled_data.transform(x)
+                price_predict= trained_model.predict(pred_model)
+                predicted_price = str(price_predict)[1:-1]
+                st.write(f'Predicted Selling Price : :green[₹] :green[{predicted_price}]')
+
         
-        # give information to users
-        col1,col2 = st.columns([0.65,0.35])
-        with col2:
-            st.caption(body='*Min and Max values are reference only')
-
-
-        # user entered the all input values and click the button
-        if button:
-            
-            # load the classification pickle model
-            with open(r'models\classification_model.pkl', 'rb') as f:
-                model = pickle.load(f)
-            
-            # make array for all user input values in required order for model prediction
-            user_data = np.array([[customer, 
-                                country, 
-                                options.item_type_dict[item_type], 
-                                application, 
-                                width, 
-                                product_ref, 
-                                np.log(float(quantity_log)), 
-                                np.log(float(thickness_log)),
-                                np.log(float(selling_price_log)),
-                                item_date.day, item_date.month, item_date.year,
-                                delivery_date.day, delivery_date.month, delivery_date.year]])
-            
-            # model predict the status based on user input
-            y_pred = model.predict(user_data)
-
-            # we get the single output in list, so we access the output using index method
-            status = y_pred[0]
-
-            return status
-
-
-
-streamlit_config()
-
-tab1, tab2 = st.tabs(['PREDICT SELLING PRICE', 'PREDICT STATUS'])
-
-with tab1:
-
-    try:
+# Status (won or lost) predicted based on the provided fields values
+if selected == 'STATUS':
+    item_list_cls = ['W','S','Others','PL','WI','IPL']
+    country_list_cls = ['28','32','38','78','27','30','25','77','39','40','26','84','79','113','89']
+    application_list_cls = [10,41,28,59,15,4,38,56,42,26,27,19,20,66,29,22,40,25,67,79,3,99,2,5,39,69,70,65,58,68]
+    product_list_cls = [1670798778, 1668701718, 628377, 640665, 611993, 1668701376,164141591, 1671863738, 1332077137, 640405, 1693867550, 1665572374,
+                        1282007633, 1668701698, 628117, 1690738206, 628112, 640400,1671876026, 164336407, 164337175, 1668701725, 1665572032, 611728,
+                        1721130331, 1693867563, 611733, 1690738219, 1722207579, 929423819,1665584320, 1665584662, 1665584642]
     
-        selling_price = prediction.regression()
+    cc1, cc2, cc3 = st.columns([2, 2, 2])
+    with cc1:
+        quantity_cls = st.text_input('Enter Quantity  (Min:611728 & Max:1722207579) in tons')
+        thickness_cls = st.text_input('Enter Thickness (Min:0.18 & Max:400)')
+        width_cls= st.text_input('Enter Width  (Min:1, Max:2990)')
 
-        if selling_price:
-            # apply custom css style for prediction text
-            style_prediction()
-            st.markdown(f'### <div class="center-text">Predicted Selling Price = {selling_price}</div>', unsafe_allow_html=True)
-            st.balloons()
-    
+    with cc2:
+        selling_price_cls= st.text_input('Enter Selling Price  (Min:1, Max:100001015)')
+        item_cls = st.selectbox('Item Type', item_list_cls)
+        country_cls= st.selectbox('Country Code', country_list_cls)
 
-    except ValueError:
+    with cc3:
+        application_cls = st.selectbox('Application Type', application_list_cls)
+        product_cls = st.selectbox('Product Reference', product_list_cls)
+        item_order_date_cls = st.date_input("Order Date", datetime.date(2023, 1, 1))
+        item_delivery_date_cls = st.date_input("Estimated Delivery Date", datetime.date(2023,1, 1))
+    with cc1:
+        for _ in range(3):
+            st.write(" ")
+        if st.button('PREDICT STATUS'):
+            data_cls = []
+            with open('country.pkl', 'rb') as file:
+                encode_country_cls = pickle.load(file)
+            with open('item type.pkl', 'rb') as file:
+                encode_item_cls = pickle.load(file)
+            with open('scaling_classify.pkl', 'rb') as file:
+                scaled_data_cls = pickle.load(file)
+            with open('randomforest_classification.pkl', 'rb') as file:
+                trained_model_cls = pickle.load(file)
 
-        col1,col2,col3 = st.columns([0.26,0.55,0.26])
+            transformed_country_cls = encode_country_cls.transform(country_list_cls)
+            encoded_ct_cls = None
+            for i, j in zip(country_list_cls, transformed_country_cls):
+                if country_cls == i:
+                    encoded_ct_cls = j
+                    break
+            else:
+                st.error("Country not found.")
+                exit()
 
-        with col2:
-            st.warning('##### Quantity Tons / Customer ID is empty')
+            transformed_item_cls = encode_item_cls.transform(item_list_cls)
+            encode_it_cls = None
+            for i, j in zip(item_list_cls, transformed_item_cls):
+                if item_cls == i:
+                    encode_it_cls = j
+                    break
+            else:
+                st.error("Item type not found.")
+                exit()
 
-     
+            order_cls = datetime.datetime.strptime(str(item_order_date_cls), "%Y-%m-%d")
+            delivery_cls = datetime.datetime.strptime(str(item_delivery_date_cls), "%Y-%m-%d")
+            day_cls = delivery_cls- order_cls
 
-with tab2:
+            data_cls.append(quantity_cls)
+            data_cls.append(thickness_cls)
+            data_cls.append(width_cls)
+            data_cls.append(selling_price_cls)
+            data_cls.append(encoded_ct_cls)
+            data_cls.append(encode_it_cls)
+            data_cls.append(application_cls)
+            data_cls.append(product_cls)
+            data_cls.append(day_cls.days)
 
-    try:
+            x_cls = np.array(data_cls).reshape(1, -1)
+            scaling_model_cls = scaled_data_cls.transform(x_cls)
+            pred_status = trained_model_cls.predict(scaling_model_cls)
+            if pred_status==6:
+                st.write(f'Predicted Status : :green[WON]')
+            else:
+                st.write(f'Predicted Status : :red[LOST]')
 
-        status = prediction.classification()
-
-        if status == 1:
-            
-            # apply custom css style for prediction text
-            style_prediction()
-            st.markdown(f'### <div class="center-text">Predicted Status = Won</div>', unsafe_allow_html=True)
-            st.balloons()
-            
-
-        elif status == 0:
-            
-            # apply custom css style for prediction text
-            style_prediction()
-            st.markdown(f'### <div class="center-text">Predicted Status = Lost</div>', unsafe_allow_html=True)
-            st.snow()
-    
-
-    except ValueError:
-
-        col1,col2,col3 = st.columns([0.15,0.70,0.15])
-
-        with col2:
-            st.warning('##### Quantity Tons / Customer ID / Selling Price is empty')
