@@ -1,17 +1,17 @@
-Industrial Copper Modeling
+# Industrial Copper Modeling
 
-Introduction
+## Introduction
 
 This project focuses on modelling industrial copper data using Python and various libraries such as pandas, numpy, scikit-learn. The objective of the project is to preprocess the data, handle missing values, detect outliers, and handle skewness. Additionally, regression and classification models will be built to predict the selling price and determine if a sale was won or lost. The trained models will be saved as a pickle file for later use in a Streamlit application.
 
-Table of Contents
+## Table of Contents
 
     Key Technologies
     Installation
     Usage
     Workflow
 
-Key Technologies
+## Key Technologies
 
   • Python scripting 
   • Pandas  
@@ -23,7 +23,7 @@ Key Technologies
   • Data Preprocessing
   • Exploratory Data Analysis
 
-Installation
+## Installation
 
 To run this project, you will need to install the following packages:
 
@@ -34,7 +34,7 @@ To run this project, you will need to install the following packages:
   pip install seaborn
   pip install matplotlib
 
-Usage
+## Usage
 
 To use this project, kindly follow the following steps:
 
@@ -43,7 +43,7 @@ To use this project, kindly follow the following steps:
 3.	Run the Streamlit app: streamlit run app.py
 4.	Access the app in your browser at http://localhost:8501
 
-Workflow
+## Workflow
 
 Data Cleaning and Preprocessing:
   Gain a deep understanding of the provided dataset variables and types
@@ -67,6 +67,6 @@ Regression:
     Algorithm Assessment: Identifying algorithms for regression
     Algorithm Selection: Opting for the Extra Tree Regressor
 
-Author
+## Author
 
 @Theressac
